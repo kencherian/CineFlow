@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useDebounce } from 'react-use';
 import Search from './components/Search.jsx';
 import Spinner from './components/Spinner.jsx';
 import MovieCard from './components/MovieCard.jsx';
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
-// Vite requires the VITE_ prefix for environment variables
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY; 
 
 const API_OPTIONS = {
@@ -21,12 +21,17 @@ const App = () => {
   const [movieList, setMovieList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // State to hold the delayed version of the search term
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Update debouncedSearchTerm only after the user stops typing for 500ms
+  useDebounce(() => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
+
   const fetchMovies = async (query = '') => {
     setIsLoading(true);
     setErrorMessage('');
     
     try {
-      // Toggle endpoint based on whether the user is searching or viewing the default list
       const endpoint = query 
         ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}`
         : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
@@ -45,7 +50,6 @@ const App = () => {
         return;
       }
 
-      // Populate the state with the fetched movie results
       setMovieList(data.results || []);
     } catch (error) {
       console.error(`Error fetching movies: ${error}`);
@@ -55,10 +59,13 @@ const App = () => {
     }
   }
 
-  // Trigger the fetch every time the searchTerm changes
+  // Trigger the API fetch only when the DEBOUNCED search term changes
   useEffect(() => {
-    fetchMovies(searchTerm);
-  }, [searchTerm]);
+    fetchMovies(debouncedSearchTerm);
+  }, [debouncedSearchTerm]);
+
+  return (
+    // ... Your existing JSX return statement remains exactly the same!
 
   return (
     <main>
