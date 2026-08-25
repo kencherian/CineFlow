@@ -4,6 +4,8 @@ import Search from './components/Search.jsx';
 import Spinner from './components/Spinner.jsx';
 import MovieCard from './components/MovieCard.jsx';
 import { updateSearchCount } from './appwrite.js';
+import Trending from './components/Trending.jsx'; // Import the new component
+import { updateSearchCount, getTrendingMovies } from './appwrite.js'; // Import the fetch function
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY; 
@@ -21,6 +23,7 @@ const App = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [movieList, setMovieList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [trendingMovies, setTrendingMovies] = useState([]); // NEW STATE
 
   // State to hold the delayed version of the search term
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -65,10 +68,23 @@ const App = () => {
     }
   }
 
+  const loadTrendingMovies = async () => {
+    try {
+      const movies = await getTrendingMovies();
+      setTrendingMovies(movies);
+    } catch (error) {
+      console.error(`Error fetching trending movies: ${error}`);
+    }
+  }
+
   // Trigger the API fetch only when the DEBOUNCED search term changes
   useEffect(() => {
     fetchMovies(debouncedSearchTerm);
   }, [debouncedSearchTerm]);
+
+   useEffect(() => {
+    loadTrendingMovies();
+  }, []);
 
   return (
     <main>
@@ -81,6 +97,11 @@ const App = () => {
           
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
         </header>
+
+        {/* NEW TRENDING SECTION */}
+        {trendingMovies.length > 0 && (
+          <Trending trendingMovies={trendingMovies} />
+        )}
 
         <section className="all-movies">
           <h2 className="mt-[40px]">All Movies</h2>
