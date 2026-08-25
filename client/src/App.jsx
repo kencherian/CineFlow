@@ -3,9 +3,8 @@ import { useDebounce } from 'react-use';
 import Search from './components/Search.jsx';
 import Spinner from './components/Spinner.jsx';
 import MovieCard from './components/MovieCard.jsx';
-import { updateSearchCount } from './appwrite.js';
-import Trending from './components/Trending.jsx'; // Import the new component
-import { updateSearchCount, getTrendingMovies } from './appwrite.js'; // Import the fetch function
+import Trending from './components/Trending.jsx';
+import { updateSearchCount, getTrendingMovies } from './appwrite.js';
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY; 
