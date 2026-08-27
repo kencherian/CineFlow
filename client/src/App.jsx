@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useDebounce } from 'react-use';
 import Search from './components/Search.jsx';
-import Spinner from './components/Spinner.jsx';
 import MovieCard from './components/MovieCard.jsx';
 import Trending from './components/Trending.jsx';
+import Spinner from './components/Spinner.jsx';
 import { updateSearchCount, getTrendingMovies } from './appwrite.js';
+import Skeleton from './components/Skeleton.jsx';
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY; 
@@ -22,7 +23,7 @@ const App = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [movieList, setMovieList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [trendingMovies, setTrendingMovies] = useState([]); // NEW STATE
+  const [trendingMovies, setTrendingMovies] = useState([]); 
 
   // State to hold the delayed version of the search term
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -97,7 +98,7 @@ const App = () => {
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
         </header>
 
-        {/* NEW TRENDING SECTION */}
+        {/* TRENDING SECTION */}
         {trendingMovies.length > 0 && (
           <Trending trendingMovies={trendingMovies} />
         )}
@@ -105,16 +106,27 @@ const App = () => {
         <section className="all-movies">
           <h2 className="mt-[40px]">All Movies</h2>
           
-          {/* Conditional Rendering: Spinner -> Error -> Movie Grid */}
-          {isLoading ? (
-            <Spinner />
-          ) : errorMessage ? (
-            <p className="text-red-500">{errorMessage}</p>
-          ) : (
-            <ul>
-              {movieList.map((movie) => (
-                <MovieCard key={movie.id} movie={movie} />
-              ))}
+          {/* Handle Error State */}
+          {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+
+          {/* Grid Layout for Skeletons and Movie Cards */}
+          {!errorMessage && (
+            <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mt-6">
+              {isLoading ? (
+                /* Render 10 skeletons to fill the screen while loading */
+                Array.from({ length: 10 }).map((_, index) => (
+                  <li key={`skeleton-${index}`}>
+                    <Skeleton />
+                  </li>
+                ))
+              ) : (
+                /* Render actual movie cards when loading is complete */
+                movieList.map((movie) => (
+                  <li key={movie.id}>
+                    <MovieCard movie={movie} />
+                  </li>
+                ))
+              )}
             </ul>
           )}
         </section>
