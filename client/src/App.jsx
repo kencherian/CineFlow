@@ -3,7 +3,6 @@ import { useDebounce } from 'react-use';
 import Search from './components/Search.jsx';
 import MovieCard from './components/MovieCard.jsx';
 import Trending from './components/Trending.jsx';
-import Spinner from './components/Spinner.jsx';
 import { updateSearchCount, getTrendingMovies } from './appwrite.js';
 import Skeleton from './components/Skeleton.jsx';
 
