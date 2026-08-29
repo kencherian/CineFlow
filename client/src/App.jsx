@@ -23,21 +23,22 @@ const App = () => {
   const [movieList, setMovieList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [trendingMovies, setTrendingMovies] = useState([]); 
-
+  const [page, setPage] = useState(1);
   // State to hold the delayed version of the search term
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
   // Update debouncedSearchTerm only after the user stops typing for 500ms
   useDebounce(() => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
 
-  const fetchMovies = async (query = '') => {
-    setIsLoading(true);
+  const fetchMovies = async (query = '', pageNum = 1) => {
+    // Only set loading to true if it's the first page to avoid flashing the skeletons
+    if (pageNum === 1) setIsLoading(true);
     setErrorMessage('');
     
     try {
       const endpoint = query 
-        ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}`
-        : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
+        ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}&page=${pageNum}`
+        : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc&page=${pageNum}`;
 
       const response = await fetch(endpoint, API_OPTIONS);
 
@@ -53,9 +54,14 @@ const App = () => {
         return;
       }
 
-      setMovieList(data.results || []);
+      // If page 1, replace the list. If page 2+, append to the existing list.
+      if (pageNum === 1) {
+        setMovieList(data.results || []);
+      } else {
+        setMovieList((prevMovies) => [...prevMovies, ...(data.results || [])]);
+      }
 
-      if (query && data.results.length > 0) {
+      if (query && data.results.length > 0 && pageNum === 1) {
         await updateSearchCount(query, data.results[0]);
       }
       
@@ -75,6 +81,18 @@ const App = () => {
       console.error(`Error fetching trending movies: ${error}`);
     }
   }
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchMovies(debouncedSearchTerm, nextPage);
+  };
+
+  // Trigger the API fetch only when the DEBOUNCED search term changes
+  useEffect(() => {
+    setPage(1); // Reset to page 1 on new search
+    fetchMovies(debouncedSearchTerm, 1);
+  }, [debouncedSearchTerm]);
 
   // Trigger the API fetch only when the DEBOUNCED search term changes
   useEffect(() => {
@@ -127,6 +145,18 @@ const App = () => {
                 ))
               )}
             </ul>
+          )}
+
+          {/* LOAD MORE BUTTON */}
+          {!isLoading && !errorMessage && movieList.length > 0 && (
+            <div className="flex justify-center mt-10 mb-10">
+              <button 
+                onClick={handleLoadMore}
+                className="bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-8 rounded-full border border-white/20 backdrop-blur-md transition-all duration-300 hover:scale-105"
+              >
+                Load More Movies
+              </button>
+            </div>
           )}
         </section>
       </div>
