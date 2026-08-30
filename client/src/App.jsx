@@ -17,6 +17,15 @@ const API_OPTIONS = {
   }
 };
 
+const GENRES = [
+  { id: '', name: 'All' },
+  { id: '28', name: 'Action' },
+  { id: '35', name: 'Comedy' },
+  { id: '27', name: 'Horror' },
+  { id: '878', name: 'Sci-Fi' },
+  { id: '16', name: 'Animation' }
+];
+
 const App = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -24,13 +33,15 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [trendingMovies, setTrendingMovies] = useState([]); 
   const [page, setPage] = useState(1);
+  
   // State to hold the delayed version of the search term
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-
+  const [activeGenre, setActiveGenre] = useState('');
+  
   // Update debouncedSearchTerm only after the user stops typing for 500ms
   useDebounce(() => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
 
-  const fetchMovies = async (query = '', pageNum = 1) => {
+  const fetchMovies = async (query = '', pageNum = 1, genre = '') => {
     // Only set loading to true if it's the first page to avoid flashing the skeletons
     if (pageNum === 1) setIsLoading(true);
     setErrorMessage('');
@@ -38,7 +49,7 @@ const App = () => {
     try {
       const endpoint = query 
         ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}&page=${pageNum}`
-        : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc&page=${pageNum}`;
+        : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc&page=${pageNum}${genre ? `&with_genres=${genre}` : ''}`;
 
       const response = await fetch(endpoint, API_OPTIONS);
 
@@ -85,19 +96,14 @@ const App = () => {
   const handleLoadMore = () => {
     const nextPage = page + 1;
     setPage(nextPage);
-    fetchMovies(debouncedSearchTerm, nextPage);
+    fetchMovies(debouncedSearchTerm, nextPage, activeGenre);
   };
 
-  // Trigger the API fetch only when the DEBOUNCED search term changes
+  // Trigger the API fetch when the search term OR the active genre changes
   useEffect(() => {
-    setPage(1); // Reset to page 1 on new search
-    fetchMovies(debouncedSearchTerm, 1);
-  }, [debouncedSearchTerm]);
-
-  // Trigger the API fetch only when the DEBOUNCED search term changes
-  useEffect(() => {
-    fetchMovies(debouncedSearchTerm);
-  }, [debouncedSearchTerm]);
+    setPage(1); // Reset to page 1 on new search or filter
+    fetchMovies(debouncedSearchTerm, 1, activeGenre);
+  }, [debouncedSearchTerm, activeGenre]);
 
    useEffect(() => {
     loadTrendingMovies();
@@ -113,6 +119,25 @@ const App = () => {
           <h1>Find <span className="text-gradient">Movies</span> You'll Enjoy Without the Hassle</h1>
           
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+          
+          {/* GENRE FILTERS (Only show if the user isn't actively searching) */}
+          {!debouncedSearchTerm && (
+            <div className="flex flex-wrap justify-center gap-4 mt-8">
+              {GENRES.map((genre) => (
+                <button
+                  key={genre.name}
+                  onClick={() => setActiveGenre(genre.id)}
+                  className={`px-5 py-2 rounded-full font-medium transition-all duration-300 ${
+                    activeGenre === genre.id
+                      ? 'bg-white text-black shadow-lg scale-105'
+                      : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
+                  }`}
+                >
+                  {genre.name}
+                </button>
+              ))}
+            </div>
+          )}
         </header>
 
         {/* TRENDING SECTION */}
