@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================
+   BASE STYLES
+   ========================================== */
+body {
+  @apply bg-gray-950 text-white font-sans antialiased;
+  overflow-x: hidden;
+}
+
+/* ==========================================
+   CUSTOM UTILITIES USED IN APP.JSX
+   ========================================== */
+.wrapper {
+  @apply max-w-7xl mx-auto px-5 sm:px-10 md:px-16 relative z-10 w-full;
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-red-500;
+}
+
+.pattern {
+  @apply fixed inset-0 z-0 opacity-30 pointer-events-none;
+  /* Assuming you have a pattern.png in your public folder. If not, it falls back to a subtle gradient. */
+  background-image: url('/pattern.png'), radial-gradient(circle at top, #1f1f2e 0%, #030303 100%);
+  background-size: cover;
+  background-position: center;
+}
+
+/* ==========================================
+   CAROUSEL SCROLLBAR HIDING
+   ========================================== */
+/* Hide scrollbar for Chrome, Safari and Opera */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
