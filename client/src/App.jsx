@@ -5,6 +5,7 @@ import MovieCard from './components/MovieCard.jsx';
 import Trending from './components/Trending.jsx';
 import { updateSearchCount, getTrendingMovies } from './appwrite.js';
 import Skeleton from './components/Skeleton.jsx';
+import ScrollToTop from './components/ScrollToTop.jsx';
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY; 
@@ -185,6 +186,9 @@ const App = () => {
           )}
         </section>
       </div>
+      
+      {/* Floating Action Button */}
+      <ScrollToTop />
     </main>
   );
 };
