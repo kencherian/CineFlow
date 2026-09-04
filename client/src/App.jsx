@@ -100,6 +100,22 @@ const App = () => {
     fetchMovies(debouncedSearchTerm, nextPage, activeGenre);
   };
 
+  // --- TEST SERVER CONNECTION ---
+  const pingServer = async () => {
+    try {
+      // Fetching from the endpoint we created in the Express server
+      const response = await fetch('http://localhost:5000/api/status');
+      const data = await response.json();
+      console.log("🟢 Backend Connection Successful:", data.message);
+    } catch (error) {
+      console.error("🔴 Backend Connection Failed:", error);
+    }
+  };
+
+  useEffect(() => {
+    pingServer();
+  }, []);
+  
   // Trigger the API fetch when the search term OR the active genre changes
   useEffect(() => {
     setPage(1); // Reset to page 1 on new search or filter
