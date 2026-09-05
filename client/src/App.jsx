@@ -3,7 +3,6 @@ import { useDebounce } from 'react-use';
 import Search from './components/Search.jsx';
 import MovieCard from './components/MovieCard.jsx';
 import Trending from './components/Trending.jsx';
-import { updateSearchCount, getTrendingMovies } from './appwrite.js';
 import Skeleton from './components/Skeleton.jsx';
 import ScrollToTop from './components/ScrollToTop.jsx';
 
@@ -35,15 +34,27 @@ const App = () => {
   const [trendingMovies, setTrendingMovies] = useState([]); 
   const [page, setPage] = useState(1);
   
-  // State to hold the delayed version of the search term
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [activeGenre, setActiveGenre] = useState('');
   
-  // Update debouncedSearchTerm only after the user stops typing for 500ms
   useDebounce(() => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
 
+  // --- NEW: Local Backend API for updating search counts ---
+  const updateSearchCount = async (searchTerm, movie) => {
+    try {
+      await fetch('http://localhost:5000/api/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ searchTerm }),
+      });
+    } catch (error) {
+      console.error("🔴 Error updating search count:", error);
+    }
+  };
+
   const fetchMovies = async (query = '', pageNum = 1, genre = '') => {
-    // Only set loading to true if it's the first page to avoid flashing the skeletons
     if (pageNum === 1) setIsLoading(true);
     setErrorMessage('');
     
@@ -66,7 +77,6 @@ const App = () => {
         return;
       }
 
-      // If page 1, replace the list. If page 2+, append to the existing list.
       if (pageNum === 1) {
         setMovieList(data.results || []);
       } else {
@@ -85,10 +95,22 @@ const App = () => {
     }
   }
 
+  // --- NEW: Local Backend API for fetching trending searches ---
   const loadTrendingMovies = async () => {
     try {
-      const movies = await getTrendingMovies();
-      setTrendingMovies(movies);
+      const response = await fetch('http://localhost:5000/api/trending');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch trending movies from database');
+      }
+
+      const data = await response.json();
+      
+      // Pass the raw trending data to state. 
+      // Note: If your Trending component previously relied on Appwrite returning full movie objects 
+      // (with posters), we will need to update the Trending component next to fetch the TMDB poster 
+      // using the 'searchTerm' strings provided by our Express backend!
+      setTrendingMovies(data);
     } catch (error) {
       console.error(`Error fetching trending movies: ${error}`);
     }
@@ -100,10 +122,8 @@ const App = () => {
     fetchMovies(debouncedSearchTerm, nextPage, activeGenre);
   };
 
-  // --- TEST SERVER CONNECTION ---
   const pingServer = async () => {
     try {
-      // Fetching from the endpoint we created in the Express server
       const response = await fetch('http://localhost:5000/api/status');
       const data = await response.json();
       console.log("🟢 Backend Connection Successful:", data.message);
@@ -116,13 +136,12 @@ const App = () => {
     pingServer();
   }, []);
   
-  // Trigger the API fetch when the search term OR the active genre changes
   useEffect(() => {
-    setPage(1); // Reset to page 1 on new search or filter
+    setPage(1); 
     fetchMovies(debouncedSearchTerm, 1, activeGenre);
   }, [debouncedSearchTerm, activeGenre]);
 
-   useEffect(() => {
+  useEffect(() => {
     loadTrendingMovies();
   }, []);
 
@@ -137,7 +156,6 @@ const App = () => {
           
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           
-          {/* GENRE FILTERS (Only show if the user isn't actively searching) */}
           {!debouncedSearchTerm && (
             <div className="flex flex-wrap justify-center gap-4 mt-8">
               {GENRES.map((genre) => (
@@ -157,7 +175,6 @@ const App = () => {
           )}
         </header>
 
-        {/* TRENDING SECTION */}
         {trendingMovies.length > 0 && (
           <Trending trendingMovies={trendingMovies} />
         )}
@@ -165,21 +182,17 @@ const App = () => {
         <section className="all-movies">
           <h2 className="mt-[40px]">All Movies</h2>
           
-          {/* Handle Error State */}
           {errorMessage && <p className="text-red-500">{errorMessage}</p>}
 
-          {/* Grid Layout for Skeletons and Movie Cards */}
           {!errorMessage && (
             <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mt-6">
               {isLoading ? (
-                /* Render 10 skeletons to fill the screen while loading */
                 Array.from({ length: 10 }).map((_, index) => (
                   <li key={`skeleton-${index}`}>
                     <Skeleton />
                   </li>
                 ))
               ) : (
-                /* Render actual movie cards when loading is complete */
                 movieList.map((movie) => (
                   <li key={movie.id}>
                     <MovieCard movie={movie} />
@@ -189,7 +202,6 @@ const App = () => {
             </ul>
           )}
 
-          {/* LOAD MORE BUTTON */}
           {!isLoading && !errorMessage && movieList.length > 0 && (
             <div className="flex justify-center mt-10 mb-10">
               <button 
@@ -203,7 +215,6 @@ const App = () => {
         </section>
       </div>
       
-      {/* Floating Action Button */}
       <ScrollToTop />
     </main>
   );
