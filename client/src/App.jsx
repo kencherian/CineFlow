@@ -42,7 +42,7 @@ const App = () => {
   // --- NEW: Local Backend API for updating search counts ---
   const updateSearchCount = async (searchTerm, movie) => {
     try {
-      await fetch('http://localhost:5000/api/search', {
+      await fetch('${import.meta.env.VITE_BACKEND_URL}/api/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ const App = () => {
   // --- NEW: Local Backend API for fetching trending searches ---
   const loadTrendingMovies = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/trending');
+      const response = await fetch('${import.meta.env.VITE_BACKEND_URL}/api/trending');
       
       if (!response.ok) {
         throw new Error('Failed to fetch trending movies from database');
@@ -124,7 +124,7 @@ const App = () => {
 
   const pingServer = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/status');
+      const response = await fetch('${import.meta.env.VITE_BACKEND_URL}/api/status');
       const data = await response.json();
       console.log("🟢 Backend Connection Successful:", data.message);
     } catch (error) {
