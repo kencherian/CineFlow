@@ -1,6 +1,21 @@
 import React from 'react';
+import { TMDBMovie } from '../types';
 
-const MovieCard = ({ movie: { title, vote_average, poster_path, release_date, original_language, overview } }) => {
+interface MovieCardProps {
+  movie: TMDBMovie;
+}
+
+const MovieCard: React.FC<MovieCardProps> = ({ movie }) => {
+  // Destructure the properties from the movie object
+  const {
+    title,
+    vote_average,
+    poster_path,
+    release_date,
+    original_language,
+    overview,
+  } = movie as TMDBMovie & { overview?: string };
+
   return (
     <div className="group relative rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-500 bg-gray-900">
       

@@ -1,6 +1,11 @@
 import React from 'react';
 
-const Search = ({ searchTerm, setSearchTerm }) => {
+interface SearchProps {
+  searchTerm: string;
+  setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
+}
+
+const Search: React.FC<SearchProps> = ({ searchTerm, setSearchTerm }) => {
   return (
     <div className="w-full max-w-2xl mx-auto mt-8">
       <div className="relative flex items-center w-full h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-lg hover:bg-white/20 focus-within:bg-white/20 focus-within:shadow-xl transition-all duration-300 overflow-hidden">
