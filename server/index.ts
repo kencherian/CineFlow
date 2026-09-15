@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { createClient } from 'redis';
+import rateLimit from 'express-rate-limit';
 import Search from './models/Search';
 
 dotenv.config();
@@ -10,9 +11,35 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust proxy if deployed on Render/Heroku (required for accurate IP tracking)
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// --- RATE LIMITERS ---
+
+// 2a. Global Limiter: Max 100 requests per 15 minutes per IP
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 100, 
+  message: { error: 'Too many requests from this IP, please try again after 15 minutes.' },
+  standardHeaders: true, 
+  legacyHeaders: false, 
+});
+
+// 2b. Stricter Limiter for Writes: Max 20 searches per minute per IP
+const searchLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, 
+  max: 20, 
+  message: { error: 'Search rate limit exceeded. Please slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply global limiter to all routes
+app.use(globalLimiter);
 
 // Database Connections
 const MONGODB_URI = process.env.MONGODB_URI as string;
@@ -42,7 +69,7 @@ app.get('/api/status', (req: Request, res: Response) => {
 // --- SEARCH METRICS API ---
 
 // 1. Log a new search or increment an existing one
-app.post('/api/search', async (req: Request, res: Response): Promise<any> => {
+app.post('/api/search', searchLimiter, async (req: Request, res: Response): Promise<any> => {
   const { searchTerm } = req.body;
 
   if (!searchTerm) {
