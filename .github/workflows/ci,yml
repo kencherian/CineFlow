@@ -32,4 +32,7 @@ jobs:
       - name: Verify Client Build (Vite)
         working-directory: ./client
         run: npm run build
-        
+      
+      - name: Run Backend Tests
+        working-directory: ./server
+        run: npm run test
