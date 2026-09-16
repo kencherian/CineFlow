@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { createClient } from 'redis';
 import rateLimit from 'express-rate-limit';
-import Search from './models/Search';
+import Search from './models/Search.js';
 
 dotenv.config();
 
