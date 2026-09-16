@@ -29,10 +29,18 @@ jobs:
         working-directory: ./client
         run: npm install
 
+      - name: Enforce Client Type Safety
+        working-directory: ./client
+        run: npx tsc --noEmit
+
+      - name: Enforce Server Type Safety
+        working-directory: ./server
+        run: npx tsc --noEmit
+
+      - name: Run Backend Integration Tests
+        working-directory: ./server
+        run: npm run test
+
       - name: Verify Client Build (Vite)
         working-directory: ./client
         run: npm run build
-      
-      - name: Run Backend Tests
-        working-directory: ./server
-        run: npm run test
