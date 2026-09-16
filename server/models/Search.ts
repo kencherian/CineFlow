@@ -1,22 +1,28 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-// 1. Create an interface representing a document in MongoDB.
 export interface ISearch extends Document {
   searchTerm: string;
-  count: number;
+  score: number;
+  lastUpdatedAt: Date;
 }
 
-// 2. Bind the interface to the Schema.
-const searchSchema = new Schema<ISearch>({
-  searchTerm: {
-    type: String,
-    required: true,
-    unique: true,
+const searchSchema = new Schema<ISearch>(
+  {
+    searchTerm: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    score: {
+      type: Number,
+      default: 1,
+    },
+    lastUpdatedAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
-  count: {
-    type: Number,
-    default: 1,
-  },
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 export default mongoose.model<ISearch>('Search', searchSchema);

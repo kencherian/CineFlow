@@ -77,13 +77,36 @@ app.post('/api/search', searchLimiter, async (req: Request, res: Response): Prom
   }
 
   try {
-    const searchDoc = await Search.findOneAndUpdate(
-      { searchTerm: searchTerm.toLowerCase() },
-      { $inc: { count: 1 } },
-      { returnDocument: 'after', upsert: true }
-    );
+    const term = searchTerm.toLowerCase();
+    const now = new Date();
     
-    // Invalidate the trending cache whenever new data is added
+    // Find the existing document to calculate decay
+    let searchDoc = await Search.findOne({ searchTerm: term });
+
+    if (searchDoc) {
+      // Calculate time difference in hours
+      const hoursSinceLastUpdate = (now.getTime() - searchDoc.lastUpdatedAt.getTime()) / (1000 * 60 * 60);
+      
+      // Decay factor with a 24-hour half-life (lambda = 0.0289)
+      const lambda = 0.0289;
+      const decayFactor = Math.exp(-lambda * hoursSinceLastUpdate);
+      
+      // Apply the decay formula and add the new search (+1)
+      searchDoc.score = (searchDoc.score * decayFactor) + 1;
+      searchDoc.lastUpdatedAt = now;
+      
+      await searchDoc.save();
+    } else {
+      // First time this term is searched
+      searchDoc = new Search({
+        searchTerm: term,
+        score: 1,
+        lastUpdatedAt: now
+      });
+      await searchDoc.save();
+    }
+    
+    // Invalidate the Redis cache so the new score reflects immediately
     await redisClient.del('trending_searches');
     
     return res.status(200).json(searchDoc);
@@ -105,8 +128,10 @@ app.get('/api/trending', async (req: Request, res: Response): Promise<any> => {
     }
 
     console.log('🐢 Serving from MongoDB');
+    
+    // Updated to sort by the new 'score' property instead of 'count'
     const trendingSearches = await Search.find()
-      .sort({ count: -1 })
+      .sort({ score: -1 })
       .limit(5);
       
     // Store the result in Redis with a TTL of 300 seconds (5 minutes)
