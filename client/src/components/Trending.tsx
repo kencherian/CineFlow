@@ -1,8 +1,22 @@
 import React, { useState, useEffect } from 'react';
+import { TMDBMovie } from '../types';
+
+interface TrendingSearchItem {
+  _id: string;
+  searchTerm: string;
+  count?: number;
+  score?: number;
+}
+
+interface TrendingCardProps {
+  searchData: TrendingSearchItem;
+  index: number;
+  movie?: TMDBMovie; // Add this if you are passing a movie object to render the poster
+}
 
 // Sub-component to fetch and render individual posters from TMDB
-const TrendingCard = ({ searchData, index }) => {
-  const [movie, setMovie] = useState(null);
+const TrendingCard: React.FC<TrendingCardProps> = ({ searchData, index }) => {
+  const [movie, setMovie] = useState<TMDBMovie | null>(null);
 
   useEffect(() => {
     const fetchMovieDetails = async () => {
@@ -44,16 +58,20 @@ const TrendingCard = ({ searchData, index }) => {
         {index + 1}
       </p>
       <img 
-        src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`} 
-        alt={movie.title} 
+        src={movie?.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/no-movie.png'}        
+        alt={movie?.title || 'Trending Movie'}
         className="w-full h-auto object-cover rounded-lg transition-transform duration-300 group-hover:scale-105"
       />
     </li>
   );
 };
 
+interface TrendingProps {
+  trendingMovies: TrendingSearchItem[];
+}
+
 // Main Trending Component
-const Trending = ({ trendingMovies }) => {
+const Trending: React.FC<TrendingProps> = ({ trendingMovies }) => {
   if (!trendingMovies || trendingMovies.length === 0) return null;
 
   return (

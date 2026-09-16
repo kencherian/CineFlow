@@ -32,7 +32,7 @@ const GENRES = [
 const App = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [movieList, setMovieList] = useState([]);
+  const [movieList, setMovieList] = useState<TMDBMovie[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [trendingMovies, setTrendingMovies] = useState([]); 
   const [page, setPage] = useState(1);
@@ -43,7 +43,7 @@ const App = () => {
   useDebounce(() => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
 
   // --- NEW: Local Backend API for updating search counts ---
-  const updateSearchCount = async (searchTerm, movie) => {
+  const updateSearchCount = async (searchTerm: string, movie: TMDBMovie) => {
     try {
       await fetch('${import.meta.env.VITE_BACKEND_URL}/api/search', {
         method: 'POST',
@@ -57,7 +57,7 @@ const App = () => {
     }
   };
 
-  const fetchMovies = async (query: string) => {
+  const fetchMovies = async (query: string, page: number = 1, genre: string = '') => {
   try {
     setIsLoading(true);
     setErrorMessage('');
