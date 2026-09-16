@@ -5,6 +5,9 @@ import MovieCard from './components/MovieCard.jsx';
 import Trending from './components/Trending.jsx';
 import Skeleton from './components/Skeleton.jsx';
 import ScrollToTop from './components/ScrollToTop.jsx';
+import { TMDBMovie } from './types';
+import { fetchWithRetry } from './utils/apiResilience';
+
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY; 
@@ -54,46 +57,40 @@ const App = () => {
     }
   };
 
-  const fetchMovies = async (query = '', pageNum = 1, genre = '') => {
-    if (pageNum === 1) setIsLoading(true);
+  const fetchMovies = async (query: string) => {
+  try {
+    setIsLoading(true);
     setErrorMessage('');
+
+    const endpoint = query 
+      ? `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}`
+      : 'https://api.themoviedb.org/3/discover/movie?sort_by=popularity.desc';
+
+    const options = {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${import.meta.env.VITE_TMDB_API_KEY}`
+      }
+    };
+
+    // Use our new resilient fetch wrapper!
+    const response = await fetchWithRetry(endpoint, options);
     
-    try {
-      const endpoint = query 
-        ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}&page=${pageNum}`
-        : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc&page=${pageNum}${genre ? `&with_genres=${genre}` : ''}`;
-
-      const response = await fetch(endpoint, API_OPTIONS);
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch movies');
-      }
-
-      const data = await response.json();
-
-      if (data.Response === 'False') {
-        setErrorMessage(data.Error || 'Failed to fetch movies');
-        setMovieList([]);
-        return;
-      }
-
-      if (pageNum === 1) {
-        setMovieList(data.results || []);
-      } else {
-        setMovieList((prevMovies) => [...prevMovies, ...(data.results || [])]);
-      }
-
-      if (query && data.results.length > 0 && pageNum === 1) {
-        await updateSearchCount(query, data.results[0]);
-      }
-      
-    } catch (error) {
-      console.error(`Error fetching movies: ${error}`);
-      setErrorMessage('Error fetching movies. Please try again later.');
-    } finally {
-      setIsLoading(false);
+    if (!response.ok) {
+      throw new Error('Failed to fetch movies after multiple attempts.');
     }
+
+    const data = await response.json();
+    setMovieList(data.results || []);
+    
+  } catch (error) {
+    console.error('Error fetching movies:', error);
+    setErrorMessage('Something went wrong finding movies. Please try again later.');
+  } finally {
+    setIsLoading(false);
   }
+};
 
   // --- NEW: Local Backend API for fetching trending searches ---
   const loadTrendingMovies = async () => {
